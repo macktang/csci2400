@@ -152,6 +152,7 @@ void eval(char *cmdline)
   char buf[MAXLINE]; /* Holds modified command line */
   int bg; /* Should the job run in bg or fg? */
   pid_t pid; /* Process id */
+  int jid;
 
   strcpy(buf, cmdline);
   bg = parseline(buf, argv);
@@ -162,9 +163,9 @@ void eval(char *cmdline)
     return; /* Ignore empty lines */
   }
 
-  if (!builtin_cmd(argv))
-  {
-
+  if (!builtin_cmd(argv))	//if its not a built in command, then....
+  {	//if(!1) = yes its builtin cmd, skip this
+  	//ie. built in commands do not run with child, the main routine does them!
     if ((pid = fork()) == 0)
     { /* Child runs user job */
 
@@ -176,7 +177,7 @@ void eval(char *cmdline)
 
     }
   /* Parent waits for foreground job to terminate */
-    if (!bg)
+    if (!bg)	//if it's a foreground job:
     {
 
       int status;
@@ -187,9 +188,11 @@ void eval(char *cmdline)
       }
 
     }
-    else
+    else	//else if its a background job, then do this:
     {
-    printf("%d %s", pid, cmdline);
+    	addjob(jobs, pid, BG, cmdline);
+		jid = pid2jid(pid);
+	    printf("[%d] (%d) %s", jid, pid, cmdline);
     }
 
   }
@@ -206,8 +209,8 @@ void eval(char *cmdline)
 // string comparisons; however, the do_bgfg routine will need 
 // to use the argv array as well to look for a job number.
 //
-int builtin_cmd(char **argv) 
-{
+int builtin_cmd(char **argv) //return 1 if built in command,
+{	//return 0 if not a builtin command.
   string cmd(argv[0]);
 
   if (strcmp("quit", argv[0]) == 0)
@@ -218,16 +221,19 @@ int builtin_cmd(char **argv)
   if (strcmp("bg", argv[0]) == 0)
   {
     do_bgfg(argv);
+    return 1;
   }
 
   if (strcmp("fg", argv[0]) == 0)
   {
     do_bgfg(argv);
+    return 1;
   }
 
   if (strcmp("jobs", argv[0]) == 0)
   {
     listjobs(jobs);
+    return 1;
   }
 
 
